@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+
+        <title>Mon projet canvas</title>
+<script type="text/javascript">
+  WebFontConfig = {
+    google: { families: [ 'Economica::latin' ] }
+  };
+  (function() {
+    var wf = document.createElement('script');
+    wf.src = ('https:' == document.location.protocol ? 'https' : 'http') +
+      '://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
+    wf.type = 'text/javascript';
+    wf.async = 'true';
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(wf, s);
+  })(); </script>
+        
+        <script src="js/twam.js"></script>
+        <style>
+        body{
+            background-color: #E8EAE9;
+        }
+        #my_canevas {
+            padding: 0;
+            margin: auto;
+            display: block;
+            width: 1600px;
+            height: 850px;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border:1px solid blue;
+        }
+            
+        </style>
+        
+    </head>
+
+    <body>
+        <div id = "my_canevas">
+        <canvas id="game" width = '1600px' height = '850px'>
+
+            Message pour les navigateurs ne supportant pas encore canvas.
+
+        </canvas>
+        </div>
+    </body>
+
+</html>
