@@ -26,17 +26,24 @@ window.onload = function()
     var current_tick = display_ticks+1;
 
     //game vars
+    var game_mode = 'play';
     var level = 1;
-    var capital = 1000;
+    var initial_capital = 100;
+    var capital = initial_capital;
+    var capital_max = initial_capital;
+    var capital_min = initial_capital;
+    var profit_factor = 0;
     
     //positions var
-    var OpenPositions = []
+    var OpenPositions = [];
     var key_list = ['A','B','C','D','E'];
+    var ClosedPositions = [];
     
     //Set timers
-    var fps = setInterval(animate, 1000/30);
-    var update_graph = setInterval(update_graph, 700);
+    var game_over = setInterval(game_over, 1000/30);
+    var update_graph = setInterval(update_graph, 1000);
     var update_score = setInterval(update_score, 1000);
+    var open_positions = setInterval(open_positions, 2000);
     
     //preload header images
     var header_img = new Image();
@@ -64,64 +71,105 @@ window.onload = function()
     context.fillText("Closed Positions: ", 680, 770);
     context.fillText("Capital min/max: ", 680, 800)
     context.fillText("Profit Factor: ", 680, 830);
-    context.fillText("0 ", 860, 770);
-    context.fillText(capital+"/"+capital, 860, 800)
-    context.fillText('N/A', 860, 830);
+    //context.fillText("0 ", 860, 770);
+    //context.fillText(capital_min+"/"+capital_max, 860, 800)
+    //context.fillText(profit_factor, 860, 830);  
+    
+    window.addEventListener('click', ClickAnalyser, false);
+    
+    init_graph();
+    
+    function init_graph(){
+        //pre-load game ticks
+        for (i = 0; i < 5000 ; i++){
+            var rand_tick = (Math.floor((Math.random() * 20) + 1) - 10);
+            //alert (rand_tick+'/'+all_ticks[all_ticks.length-1]+'/'+i);
+            rand_tick += all_ticks[all_ticks.length-1];
+            all_ticks.push(rand_tick);
 
-    //pre-load game ticks
-    for (i = 0; i < 5000 ; i++){
-        var rand_tick = (Math.floor((Math.random() * 20) + 1) - 10);
-        //alert (rand_tick+'/'+all_ticks[all_ticks.length-1]+'/'+i);
-        rand_tick += all_ticks[all_ticks.length-1];
-        all_ticks.push(rand_tick);
-        
+        }
     }
     
-    function animate()
+    function game_over()
     {
-        /*
-        context.beginPath(); //On démarre un nouveau tracé.
-        context.arc(100, 100, 50, 0, Math.PI*2); //On trace la courbe délimitant notre forme
-        context.fill(); //On utilise la méthode fill(); si l'on veut une forme pleine
-        context.closePath();
-        */
+        if (game_mode == 'game_over'){
+            context.clearRect(7, 140, 1700, 600);
+            //Display Game Over screen
+            context.font = "120px Economica";
+            context.fillStyle = "#113F59"
+            context.fillText("GAME OVER", 500, 450);
+            
+            //current tick background
+            context.fillStyle = "#113F59";
+            context.fillRect(550, 500, 350, 100);//1350
 
+            //update current tick label
+            context.font = "80px Economica";
+            context.fillStyle = "#fff"
+            context.fillText("RESTART", 610, 580);
+        }
+    }
+    function restart(){
+        
+        //reset game_vars
+        level = 1;
+        capital = initial_capital;
+        capital_max = initial_capital;
+        capital_min = initial_capital;
+        profit_factor = 0;
+        
+        //positions var
+        OpenPositions = [];
+        key_list = ['A','B','C','D','E'];
+        ClosedPositions = [];
+        all_ticks = [1000];
+        
+        init_graph();
+        
+        game_mode = 'play';
+        
     }
     function open_positions()
     {
-       
-        if (OpenPositions.length * 2  < level){
+     if (game_mode=='play' && current_tick > (display_ticks + 5)){  
+        if (OpenPositions.length * 2  < level && OpenPositions.length < 5){
             var open_new = Math.floor((Math.random() * 5) + 1);
-            var pos_key = Math.floor((Math.random() * 5) + 1)-1;
+            var pos_key = Math.floor((Math.random() * key_list.length) + 1)-1;
             var pos_nb_lots = Math.floor((Math.random() * level) + 1);
-            pos_key = key_list[pos_key];
+            var new_key = key_list[pos_key];
             if (open_new == 1){
                 var position_dir = Math.floor((Math.random() * 2) + 1);
                 if (position_dir == 1){
                     var new_pos_dir = 'BUY';
+                    var open = all_ticks[current_tick] + 0.5;
                 }
                 else{
                     var new_pos_dir = 'SELL';
+                    var open = all_ticks[current_tick] - 0.5;
                 }
                 var new_position = {
                     'OPEN_TICK': all_ticks[current_tick],
+                    'OPEN': open,
                     'DIR': new_pos_dir,
-                    'CHAR': pos_key,
+                    'CHAR': new_key,
                     'NB_LOTS': pos_nb_lots,
                 }
                 OpenPositions.push(new_position);
-                //alert ('new pos created'+OpenPositions.length)
+                key_list.splice(pos_key,1);
+                //alert ('new pos opened'+all_ticks[current_tick])
+
             }
         }   
         
-        
+     }
     }
     function update_graph()
     {
+    if (game_mode=='play'){
         current_tick += 1;
-        open_positions();
+        //open_positions();
         //context.drawImage(white_board_img, 7, 140);
-        context.clearRect(7, 140, 1600, 600);
+        context.clearRect(7, 140, 1700, 600);
         context.drawImage(board_img, 7, 140);
         //create list with the last tick values
         all_ticks_short = all_ticks.slice(current_tick-display_ticks,current_tick);
@@ -166,7 +214,7 @@ window.onload = function()
             if (i == display_ticks-1){
                 //current tick background
                 context.fillStyle = "#113F59";
-                context.fillRect(1350, (tick_pos_y -10), 45, 27);
+                context.fillRect(1350, (tick_pos_y -10), 45, 27);//1350
                 
                 //update current tick label
                 context.font = "20px Economica";
@@ -188,8 +236,8 @@ window.onload = function()
                 if (pos_y > 670){
                     pos_y = 672;
                 }
-                else if (pos_y < 150){
-                    pos_y = 150 ;
+                else if (pos_y < 175){
+                    pos_y = 175 ;
                 }
                 
                 context.beginPath();
@@ -203,7 +251,7 @@ window.onload = function()
                 }
                 
                 //draw line
-                context.moveTo(25, pos_y);
+                context.moveTo(28, pos_y);
                 context.lineWidth = 2;
                 context.lineTo(1330, pos_y);
                 context.stroke();
@@ -223,53 +271,163 @@ window.onload = function()
                 
                 //draw Square
                 //current tick background
-                context.fillRect(1350, pos_y-10, 45, 27);
+                context.fillRect(1350, pos_y-10, 90, 27);
                 
                 //update current tick label
+                var gain_potentiel = getResult(OpenPositions[i]['DIR'], OpenPositions[i]['OPEN'], OpenPositions[i]['NB_LOTS']);
                 context.font = "20px Economica";
                 context.fillStyle = "#fff"
-                context.fillText(OpenPositions[i]['OPEN_TICK'], 1353, (pos_y +10));
+                context.fillText(OpenPositions[i]['OPEN_TICK'] +' ('+gain_potentiel+')', 1353, (pos_y +10));
                 
                 //add text on bubbles
                 context.font = "22px Economica";
                 context.fillStyle = "#000"
                 context.fillText(OpenPositions[i]['NB_LOTS'], 1195, pos_y+7);
                 context.fillText(OpenPositions[i]['CHAR'], 1295, pos_y+7);
+
+                //draw Button to close position
+                context.shadowColor = "black";
+                context.shadowBlur = 10;
+                context.shadowOffsetX = 5;
+                context.fillStyle = "#20D6C7";
+                context.beginPath(); //On démarre un nouveau tracé.
+                context.arc(1500, 270+(80*i), 30, 0, Math.PI*2);//On trace la courbe délimitant notre forme
+                context.fill(); //On utilise la méthode fill(); si l'on veut une forme pleine
+                context.closePath();
+                context.shadowBlur = 0;
+                context.shadowOffsetX = 0;    
                 
-                /*
-                //get line color and gain potentiel depending of the position direction BUY/SELL
-                //var gain_potentiel = getResult(OpenPositions[i]['DIR'], OpenPositions[i]['OPEN_TICK'], OpenPositions[i]['NB_LOTS']);
+                //add label to button
+                context.font = "42px Economica";
+                context.fillStyle = "#000"
+                context.fillText(OpenPositions[i]['CHAR'], 1490, 282+(80*i));
 
-
-                //Draw position line
-                g.lineStyle(2, line_color, 1);  
-                g.moveTo(18, pos_y);
-                g.lineTo(690, pos_y);
-                //Display position open & gain potentiel
-                game.add.text(707, pos_y-12, OpenPositions[i]['OPEN_TICK'] + '('+gain_potentiel+')',  { font: "15px Montserrat", fill: '#000', backgroundColor: lib_color});
-
-                //draw circles on line to display NB_LOT and closing key
-                g.beginFill(line_color, 1);
-                g.drawCircle(590, pos_y, 23);
-                game.add.text(587, pos_y-7, OpenPositions[i]['CHAR'],  { font: "10px Montserrat", fill: '#000' , backgroundColor: lib_color} );
-                g.drawCircle(660, pos_y, 23);
-                game.add.text(658, pos_y-7, OpenPositions[i]['NB_LOTS'],  { font: "10px Montserrat", fill: '#000' , backgroundColor: lib_color} );
-                */
             }
+    }//end game_mode check
     }
+    
+    function ClickAnalyser(event){
+      //alert("1 - "+event);
+      x = event.pageX - canvas.offsetLeft;
+      y = event.pageY - canvas.offsetTop;
+      //alert("2 - x:"+x+" /y:"+y);
+      if(game_mode=='play'){
+          if (x>=1500 && x<=1580){
+              for (i = 0 ; i < OpenPositions.length; i++){
+                if (y>(250+(70*i)) && y<(320+(70*i))) {
+                    //alert("Close Position n°"+i);
+                    ClosePosition(i);
+                }
+              }
+          }
+      }
+      if (game_mode == 'game_over'){
+          if (x>=600 && x<=950 && y>=515 && y<=620){
+             restart();   
+          }
+      }
+    
+    }
+    
+    function ClosePosition(pos_id){
+        var position_rst = getResult(OpenPositions[pos_id]['DIR'], OpenPositions[pos_id]['OPEN'], OpenPositions[pos_id]['NB_LOTS']);
+        //add closed position to list of closed positions
+        var closed_pos = {
+            'OPEN_TICK': OpenPositions[pos_id]['OPEN_TICK'],
+            'DIR': OpenPositions[pos_id]['DIR'],
+            'CHAR': OpenPositions[pos_id]['CHAR'],
+            'NB_LOTS': OpenPositions[pos_id]['NB_LOTS'],
+            'CLOSE_TICK': all_ticks[current_tick],
+            'RST':position_rst,
+        }
+        key_list.push(OpenPositions[pos_id]['CHAR']);     
+        ClosedPositions.push(closed_pos);//add to closed positions
+        OpenPositions.splice(pos_id, 1);//remove position from list of open positions
+                
+        update_graph();
+        update_score();   
+        
+    }
+    
+    function getResult(dir, open, nblots) 
+    {
+        if (dir == 'BUY'){
+            return ((all_ticks[current_tick-1] - 0.5) - open) * nblots;
+        }
+        else if (dir == 'SELL'){
+            return (open - (all_ticks[current_tick-1] + 0.5) ) * nblots;
+            //return all_ticks[last_tick]
+        }  
+    }
+    
+    function getAllResult() 
+    {
+        var ongoing_rst = 0;
+        for (i = 0; i < OpenPositions.length; i ++){
+            ongoing_rst += getResult(OpenPositions[i]['DIR'], OpenPositions[i]['OPEN'], OpenPositions[i]['NB_LOTS']);
+        }
+        return ongoing_rst;
+    }
+    
     function update_score()
     {
-        level += 1;
-        capital += 1;
-        //clear level value
-        context.clearRect(200, 740, 100, 100);
-        //clear capital value
-        context.clearRect(370, 740, 150, 100);
-        context.font = "85px Economica";
+        //get capital, capital max /min
+        capital = initial_capital;
+        capital_max = initial_capital;
+        capital_min = initial_capital;
+        var sum_gains = 0;
+        var sum_losses = 0;
+        
+        
+        for (i = 0; i < ClosedPositions.length; i ++){
+            capital += ClosedPositions[i]['RST'];
+            if (capital > capital_max){
+                capital_max = capital;
+            }
+            if (capital < capital_min){
+                capital_min = capital;
+            }
+            if (ClosedPositions[i]['RST'] >= 0){
+                sum_gains += ClosedPositions[i]['RST'];
+            }
+            else{
+                sum_losses += Math.abs(ClosedPositions[i]['RST']);
+            }
+        }
+        
+        //calculate profit factor
+        if (sum_losses > 0){
+            profit_factor = Math.round(sum_gains/sum_losses,2);
+        }
+        
+        //calculate level
+        level = Math.floor(((capital_max - initial_capital) / 50),0)+1;
+        
+        //define score font size and color
+        context.font = "83px Economica";
         context.fillStyle = "#D54F58"
+        
+        //clear & update level value
+        context.clearRect(200, 740, 70, 100);
         context.fillText(level, 200, 820);
+        
+        //clear & update capital value
+        context.clearRect(370, 740, 150, 100);
         context.fillText(capital, 370, 820);
+        
+        context.font = "30px Economica";
+        context.clearRect(850, 750, 300, 300);
+        context.fillText(ClosedPositions.length, 860, 770);
+        context.fillText(capital_min+"/"+capital_max, 860, 800)
+        context.fillText(profit_factor, 860, 830);  
 
+        if  (OpenPositions.length > 0){
+            var ongoing_score = getAllResult(); 
+            if (capital + getAllResult() <= 0){
+                game_mode = 'game_over';
+            }
+        }
     }
+    
 
 }
