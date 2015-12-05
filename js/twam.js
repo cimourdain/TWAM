@@ -397,7 +397,7 @@ window.onload = function()
         
         //calculate profit factor
         if (sum_losses > 0){
-            profit_factor = Math.round(sum_gains/sum_losses,2);
+            profit_factor = Math.round(sum_gains/sum_losses*100)/100;
         }
         
         //calculate level
@@ -416,7 +416,7 @@ window.onload = function()
         context.fillText(capital, 370, 820);
         
         context.font = "30px Economica";
-        context.clearRect(850, 750, 300, 300);
+        context.clearRect(850, 740, 300, 300);
         context.fillText(ClosedPositions.length, 860, 770);
         context.fillText(capital_min+"/"+capital_max, 860, 800)
         context.fillText(profit_factor, 860, 830);  
