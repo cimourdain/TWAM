@@ -2,11 +2,15 @@
     {
       "name": "cimourdain",
       "score": "250",
+      "PF":"1.3",
+      "nb_trades":"12",
       "date": "2015-12-03"
     },
     {
       "name": "ciblout",
       "score": "1000",
+      "PF":"2.56",
+      "nb_trades":"54",
       "date": "2015-12-06"
     }
   ]}

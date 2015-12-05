@@ -77,8 +77,93 @@ window.onload = function()
     
     window.addEventListener('click', ClickAnalyser, false);
     
+    //init gaph
     init_graph();
+ 
     
+    /*
+    
+    GAME OVER PREP
+    
+    */
+    
+    var player_name = prompt("Please enter your name", "Harry Potter");
+    /*
+    var fs = require('fs');
+    var fileName = './scores.json';
+    var file = require(fileName);
+
+    var new_score = {"Name":player_name,       
+                     "score": "250",
+                     "PF":"1.3",
+                     "nb_trades":"12",
+                     "date": "2015-12-03"};
+    file.scores.push(new_score);
+    
+    fs.writeFile(fileName, JSON.stringify(file), function (err) {
+      if (err) return console.log(err)
+      console.log(JSON.stringify(file));
+      console.log('writing to ' + fileName);
+    });
+    */
+    //load top_scores
+    var top_scores = FileReader("scores.json");
+    //console.log("Top Scores:"+JSON.stringify(top_scores));
+    top_scores = JSON.parse(top_scores);
+    //console.log(top_scores.scores.length );
+    var new_score = {"name": player_name,       
+                     "score": "250",
+                     "PF":"1.3",
+                     "nb_trades":"12",
+                     "date": "2015-12-03"};
+    top_scores.scores.push(new_score);
+    top_scores_w = JSON.stringify(top_scores);
+	
+    writeFile("scores.json", top_scores_w);
+    
+    //sort scores
+    top_scores.scores.sort(function (a, b) {
+      if (a.score > b.score) {
+        return 1;
+      }
+      if (a.score < b.score) {
+        return -1;
+      }
+      // a must be equal to b
+      return 0;
+    });
+    
+    /*********************************************
+    
+    
+    ##############    FUNCTIONS    ###############
+    
+    **********************************************/
+    /*
+    
+    FUNCTION TO READ FILES
+    
+    */
+    function FileReader(my_file){   
+        var request = new XMLHttpRequest();
+        request.overrideMimeType("application/json");
+        request.open("GET", my_file, false);
+        request.send(null);
+        return request.responseText;
+    }
+    function writeFile(fname, data) {
+        var fso, fileHandle;
+        fso = new ActiveXObject("Scripting.FileSystemObject");
+        fileHandle = fso.CreateTextFile(fname, true);
+        fileHandle.write(data);
+        fileHandle.close();
+      }
+    
+    /*
+    
+    FUNCTION TO INITATE ALL TICKS
+    
+    */
     function init_graph(){
         //pre-load game ticks
         for (i = 0; i < 5000 ; i++){
@@ -89,10 +174,16 @@ window.onload = function()
 
         }
     }
+
+    /*
     
+    FUNCTION TO MANAGE GAME_OVER
+    
+    */
     function game_over()
     {
         if (game_mode == 'game_over'){
+            
             context.clearRect(7, 140, 1700, 600);
             //Display Game Over screen
             context.font = "120px Economica";
@@ -107,22 +198,54 @@ window.onload = function()
             context.font = "80px Economica";
             context.fillStyle = "#fff"
             context.fillText("RESTART", 610, 580);
+
+
+            //
+            //display top scores
+            //
             
-            var top_scores = FileReader("scores.json");
-            //console.log("Top Scores:"+JSON.stringify(top_scores));
-            top_scores = JSON.parse(top_scores);
-            console.log(top_scores.scores[0].name);
+            //Display background and title
+            context.fillStyle = "#113F59";
+            context.fillRect(1050, 185, 600, 500);//1350
+            context.font = "70px Economica";
+            context.fillStyle = "#fff"
+            context.fillText("TOP SCORES", 1200, 250);
+            
+            //display headers
+            context.font = "20px Economica";
+            context.fillText("Name", 1090, 290);
+            context.fillText("Score", 1360, 290);
+            context.fillText("PF", 1410, 290);
+            context.fillText("Trades", 1445, 290);
+            context.fillText("Date", 1525, 290);
+            
+            //drax line under headers
+            context.beginPath();
+            context.strokeStyle = '#fff';
+            context.moveTo(1090, 300);
+            context.lineWidth = 1;
+            context.lineTo(1590, 300);
+            context.stroke();
+            context.closePath();
+            
+            //Display scores
+            for (i=0 ;top_scores.scores.length > i; i++){
+            
+                context.fillText(top_scores.scores[i].name, 1090, 320+45*i);
+                context.fillText(top_scores.scores[i].score, 1360, 320+45*i);
+                context.fillText(top_scores.scores[i].PF, 1410, 320+45*i);
+                context.fillText(top_scores.scores[i].nb_trades, 1460, 320+45*i);
+                context.fillText(top_scores.scores[i].date, 1500, 320+45*i);
+            }
+            
         }
         
     }
-    function FileReader(my_file){   
-        var request = new XMLHttpRequest();
-        request.overrideMimeType("application/json");
-        request.open("GET", my_file, false);
-        request.send(null);
-        return request.responseText;
-    }
+    /*
     
+    FUNCTION RESTART GAME (reset game vars) on game over
+    
+    */
     function restart(){
         
         //reset game_vars
@@ -143,6 +266,9 @@ window.onload = function()
         game_mode = 'play';
         
     }
+
+    
+
     function open_positions()
     {
      if (game_mode=='play' && current_tick > (display_ticks + 5)){  
