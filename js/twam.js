@@ -26,7 +26,7 @@ window.onload = function()
     var current_tick = display_ticks+1;
 
     //game vars
-    var game_mode = 'play';
+    var game_mode = 'game_over';
     var level = 1;
     var initial_capital = 100;
     var capital = initial_capital;
@@ -99,16 +99,30 @@ window.onload = function()
             context.fillStyle = "#113F59"
             context.fillText("GAME OVER", 500, 450);
             
-            //current tick background
+            //restart button background
             context.fillStyle = "#113F59";
             context.fillRect(550, 500, 350, 100);//1350
 
-            //update current tick label
+            //restart button label
             context.font = "80px Economica";
             context.fillStyle = "#fff"
             context.fillText("RESTART", 610, 580);
+            
+            var top_scores = FileReader("scores.json");
+            //console.log("Top Scores:"+JSON.stringify(top_scores));
+            top_scores = JSON.parse(top_scores);
+            console.log(top_scores.scores[0].name);
         }
+        
     }
+    function FileReader(my_file){   
+        var request = new XMLHttpRequest();
+        request.overrideMimeType("application/json");
+        request.open("GET", my_file, false);
+        request.send(null);
+        return request.responseText;
+    }
+    
     function restart(){
         
         //reset game_vars
@@ -395,6 +409,10 @@ window.onload = function()
             }
         }
         
+        if (game_mode == 'game_over'){
+            
+            capital = 0;
+        }
         //calculate profit factor
         if (sum_losses > 0){
             profit_factor = Math.round(sum_gains/sum_losses*100)/100;
