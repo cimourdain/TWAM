@@ -26,13 +26,16 @@ window.onload = function()
     var current_tick = display_ticks+1;
 
     //game vars
-    var game_mode = 'game_over';
+    var game_mode = 'play';
     var level = 1;
     var initial_capital = 100;
     var capital = initial_capital;
     var capital_max = initial_capital;
     var capital_min = initial_capital;
     var profit_factor = 0;
+    var player_name = "anonyme";
+    var player_name_saved = 0;
+    var top_scores;
     
     //positions var
     var OpenPositions = [];
@@ -81,57 +84,7 @@ window.onload = function()
     init_graph();
  
     
-    /*
-    
-    GAME OVER PREP
-    
-    */
-    
-    var player_name = prompt("Please enter your name", "Harry Potter");
-    /*
-    var fs = require('fs');
-    var fileName = './scores.json';
-    var file = require(fileName);
 
-    var new_score = {"Name":player_name,       
-                     "score": "250",
-                     "PF":"1.3",
-                     "nb_trades":"12",
-                     "date": "2015-12-03"};
-    file.scores.push(new_score);
-    
-    fs.writeFile(fileName, JSON.stringify(file), function (err) {
-      if (err) return console.log(err)
-      console.log(JSON.stringify(file));
-      console.log('writing to ' + fileName);
-    });
-    */
-    //load top_scores
-    var top_scores = FileReader("scores.json");
-    //console.log("Top Scores:"+JSON.stringify(top_scores));
-    top_scores = JSON.parse(top_scores);
-    //console.log(top_scores.scores.length );
-    var new_score = {"name": player_name,       
-                     "score": "250",
-                     "PF":"1.3",
-                     "nb_trades":"12",
-                     "date": "2015-12-03"};
-    top_scores.scores.push(new_score);
-    top_scores_w = JSON.stringify(top_scores);
-	
-    writeFile("scores.json", top_scores_w);
-    
-    //sort scores
-    top_scores.scores.sort(function (a, b) {
-      if (a.score > b.score) {
-        return 1;
-      }
-      if (a.score < b.score) {
-        return -1;
-      }
-      // a must be equal to b
-      return 0;
-    });
     
     /*********************************************
     
@@ -139,6 +92,23 @@ window.onload = function()
     ##############    FUNCTIONS    ###############
     
     **********************************************/
+    function get_current_date(){
+        var today = new Date();
+        var dd = today.getDate();
+        var mm = today.getMonth()+1; //January is 0!
+        var yyyy = today.getFullYear();
+
+        if(dd<10) {
+            dd='0'+dd
+        } 
+
+        if(mm<10) {
+            mm='0'+mm
+        } 
+
+        today = dd+'-'+mm+'-'+yyyy;
+        return today;
+    }
     /*
     
     FUNCTION TO READ FILES
@@ -180,10 +150,11 @@ window.onload = function()
     FUNCTION TO MANAGE GAME_OVER
     
     */
+
     function game_over()
     {
         if (game_mode == 'game_over'){
-            
+
             context.clearRect(7, 140, 1700, 600);
             //Display Game Over screen
             context.font = "120px Economica";
@@ -228,9 +199,47 @@ window.onload = function()
             context.stroke();
             context.closePath();
             
+            //Ask player name and get scores from database
+            if (player_name_saved == 0){
+                //ask player name
+                player_name = prompt("Game Over: Enter your name", player_name);
+                player_name_saved = 1;
+                
+                //open scores database and get all scores
+                top_scores = FileReader("scores.json");
+                top_scores = JSON.parse(top_scores);
+                
+                //add player score to all scores
+                today = get_current_date();
+                var new_score = {"name": player_name,       
+                                 "score": capital_max,
+                                 "PF": profit_factor,
+                                 "nb_trades":ClosedPositions.length,
+                                 "date": today};
+                top_scores.scores.push(new_score);
+                
+                //update score database with player score
+                top_scores_w = JSON.stringify(top_scores);
+                //console.log(top_scores_w);
+                var request = new XMLHttpRequest();
+                request.open("GET", './save_scores.php?new_json='+top_scores_w, true);
+                request.send();
+
+                //sort scores
+                top_scores.scores.sort(function (a, b) {
+                  if (a.score > b.score) {
+                    return 1;
+                  }
+                  if (a.score < b.score) {
+                    return -1;
+                  }
+                  // a must be equal to b
+                  return 0;
+                });    
+                
+            }
             //Display scores
-            for (i=0 ;top_scores.scores.length > i; i++){
-            
+            for (i=0 ;i < Math.min(8,top_scores.scores.length); i++){
                 context.fillText(top_scores.scores[i].name, 1090, 320+45*i);
                 context.fillText(top_scores.scores[i].score, 1360, 320+45*i);
                 context.fillText(top_scores.scores[i].PF, 1410, 320+45*i);
@@ -254,7 +263,7 @@ window.onload = function()
         capital_max = initial_capital;
         capital_min = initial_capital;
         profit_factor = 0;
-        
+        player_name_saved = 0;
         //positions var
         OpenPositions = [];
         key_list = ['A','B','C','D','E'];
@@ -569,6 +578,7 @@ window.onload = function()
             var ongoing_score = getAllResult(); 
             if (capital + getAllResult() <= 0){
                 game_mode = 'game_over';
+                
             }
         }
     }
