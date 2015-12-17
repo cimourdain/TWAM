@@ -41,6 +41,7 @@ window.onload = function()
     var OpenPositions = [];
     var key_list = ['A','B','C','D','E'];
     var ClosedPositions = [];
+    var PosButtons = [];
     
     //Set timers
     var game_over = setInterval(game_over, 1000/30);
@@ -218,19 +219,18 @@ window.onload = function()
                                  "date": today};
                 top_scores.scores.push(new_score);
                 
-                //update score database with player score
-                top_scores_w = JSON.stringify(top_scores);
-                //console.log(top_scores_w);
+                //update score database
                 var request = new XMLHttpRequest();
-                request.open("GET", './save_scores.php?new_json='+top_scores_w, true);
+                request.open("GET", './save_scores.php?name='+player_name+'&score='+capital_max+'&PF='+profit_factor+'&nb_trades='+ClosedPositions.length, true);
                 request.send();
+                
 
                 //sort scores
                 top_scores.scores.sort(function (a, b) {
-                  if (a.score > b.score) {
+                  if (a.score < b.score) {
                     return 1;
                   }
-                  if (a.score < b.score) {
+                  if (a.score > b.score) {
                     return -1;
                   }
                   // a must be equal to b
@@ -250,6 +250,7 @@ window.onload = function()
         }
         
     }
+    
     /*
     
     FUNCTION RESTART GAME (reset game vars) on game over
@@ -276,15 +277,20 @@ window.onload = function()
         
     }
 
+    /*
     
+    OPEN POSITIONS
+    
+    */
 
     function open_positions()
     {
      if (game_mode=='play' && current_tick > (display_ticks + 5)){  
-        if (OpenPositions.length * 2  < level && OpenPositions.length < 5){
+        if (OpenPositions.length < level && OpenPositions.length < 5){
             var open_new = Math.floor((Math.random() * 5) + 1);
             var pos_key = Math.floor((Math.random() * key_list.length) + 1)-1;
-            var pos_nb_lots = Math.floor((Math.random() * level) + 1);
+            var max_lots = (Math.floor((capital_max/100),0)- (Math.floor((capital_max/1000),0)*10)) %5;
+            var pos_nb_lots = Math.floor((Math.random() * max_lots) + 1);
             var new_key = key_list[pos_key];
             if (open_new == 1){
                 var position_dir = Math.floor((Math.random() * 2) + 1);
@@ -312,6 +318,63 @@ window.onload = function()
         
      }
     }
+    /*
+    
+    CLOSE POSITIONS
+    
+    */
+    function ClosePosition(pos_id){
+        var position_rst = getResult(OpenPositions[pos_id]['DIR'], OpenPositions[pos_id]['OPEN'], OpenPositions[pos_id]['NB_LOTS']);
+        //add closed position to list of closed positions
+        var closed_pos = {
+            'OPEN_TICK': OpenPositions[pos_id]['OPEN_TICK'],
+            'DIR': OpenPositions[pos_id]['DIR'],
+            'CHAR': OpenPositions[pos_id]['CHAR'],
+            'NB_LOTS': OpenPositions[pos_id]['NB_LOTS'],
+            'CLOSE_TICK': all_ticks[current_tick],
+            'RST':position_rst,
+        }
+        key_list.push(OpenPositions[pos_id]['CHAR']);     
+        ClosedPositions.push(closed_pos);//add to closed positions
+        OpenPositions.splice(pos_id, 1);//remove position from list of open positions
+                
+        update_graph();
+        update_score();   
+        
+    }
+    /*
+    
+    GET RESULT OF A POSITION
+    
+    */
+    function getResult(dir, open, nblots) 
+    {
+        if (dir == 'BUY'){
+            return ((all_ticks[current_tick-1] - 0.5) - open) * nblots;
+        }
+        else if (dir == 'SELL'){
+            return (open - (all_ticks[current_tick-1] + 0.5) ) * nblots;
+            //return all_ticks[last_tick]
+        }  
+    }
+    /*
+    
+    GET RESULT OF ALL POSITIONS
+    
+    */
+    function getAllResult() 
+    {
+        var ongoing_rst = 0;
+        for (i = 0; i < OpenPositions.length; i ++){
+            ongoing_rst += getResult(OpenPositions[i]['DIR'], OpenPositions[i]['OPEN'], OpenPositions[i]['NB_LOTS']);
+        }
+        return ongoing_rst;
+    }
+    /*
+    
+    UPDATE GRAPH
+    
+    */
     function update_graph()
     {
     if (game_mode=='play'){
@@ -379,6 +442,7 @@ window.onload = function()
             DISPLAY POSITIONS
             */
             //for every position, display it on the graph
+            PosButtons = [];
             for (i = 0 ; i < OpenPositions.length; i++){
                 //calculate position line position
                 var pos_y =  670 + (470/range)*(tick_min - OpenPositions[i]['OPEN_TICK']);
@@ -444,7 +508,16 @@ window.onload = function()
                 context.fill(); //On utilise la méthode fill(); si l'on veut une forme pleine
                 context.closePath();
                 context.shadowBlur = 0;
-                context.shadowOffsetX = 0;    
+                context.shadowOffsetX = 0;
+                
+                var button = {
+                    "x" : 1470 ,
+                    "y" : 270+(80*i)-30,
+                    "h" : 60,
+                    "w" : 60,
+                };
+                PosButtons.push(button);
+                                
                 
                 //add label to button
                 context.font = "42px Economica";
@@ -454,70 +527,54 @@ window.onload = function()
             }
     }//end game_mode check
     }
+
+    /*
     
-    function ClickAnalyser(event){
-      //alert("1 - "+event);
-      x = event.pageX - canvas.offsetLeft;
-      y = event.pageY - canvas.offsetTop;
-      //alert("2 - x:"+x+" /y:"+y);
-      if(game_mode=='play'){
-          if (x>=1500 && x<=1580){
-              for (i = 0 ; i < OpenPositions.length; i++){
-                if (y>(250+(70*i)) && y<(320+(70*i))) {
-                    //alert("Close Position n°"+i);
-                    ClosePosition(i);
-                }
-              }
-          }
-      }
-      if (game_mode == 'game_over'){
-          if (x>=600 && x<=950 && y>=515 && y<=620){
-             restart();   
-          }
-      }
+    MANAGE CLICK
     
-    }
-    
-    function ClosePosition(pos_id){
-        var position_rst = getResult(OpenPositions[pos_id]['DIR'], OpenPositions[pos_id]['OPEN'], OpenPositions[pos_id]['NB_LOTS']);
-        //add closed position to list of closed positions
-        var closed_pos = {
-            'OPEN_TICK': OpenPositions[pos_id]['OPEN_TICK'],
-            'DIR': OpenPositions[pos_id]['DIR'],
-            'CHAR': OpenPositions[pos_id]['CHAR'],
-            'NB_LOTS': OpenPositions[pos_id]['NB_LOTS'],
-            'CLOSE_TICK': all_ticks[current_tick],
-            'RST':position_rst,
+    */
+    function collides(rects, x, y) {
+        var isCollision = false;
+        var collisionId = 99;
+        for (var i = 0, len = rects.length; i < len; i++) {
+            var left = rects[i].x, right = rects[i].x+rects[i].w;
+            var top = rects[i].y, bottom = rects[i].y+rects[i].h;
+            if (right >= x
+                && left <= x
+                && bottom >= y
+                && top <= y) {
+                isCollision = rects[i];
+                collisionId = i;
+            }
         }
-        key_list.push(OpenPositions[pos_id]['CHAR']);     
-        ClosedPositions.push(closed_pos);//add to closed positions
-        OpenPositions.splice(pos_id, 1);//remove position from list of open positions
-                
-        update_graph();
-        update_score();   
-        
+        return [isCollision, collisionId];
     }
     
-    function getResult(dir, open, nblots) 
-    {
-        if (dir == 'BUY'){
-            return ((all_ticks[current_tick-1] - 0.5) - open) * nblots;
+    // listener, using W3C style for example    
+    function ClickAnalyser(e) {
+        console.log('click: ' + e.offsetX + '/' + e.offsetY);
+        if (game_mode == 'play'){
+            var rect = collides(PosButtons, e.offsetX, e.offsetY);
+            if (rect[0]) {
+                console.log('collision: ' + rect[0].x + '/' + rect[0].y);
+                ClosePosition(rect[1]);
+            } 
+            else {
+                console.log('clicked on nothing clickable');
+            }
         }
-        else if (dir == 'SELL'){
-            return (open - (all_ticks[current_tick-1] + 0.5) ) * nblots;
-            //return all_ticks[last_tick]
-        }  
-    }
-    
-    function getAllResult() 
-    {
-        var ongoing_rst = 0;
-        for (i = 0; i < OpenPositions.length; i ++){
-            ongoing_rst += getResult(OpenPositions[i]['DIR'], OpenPositions[i]['OPEN'], OpenPositions[i]['NB_LOTS']);
+        if (game_mode == 'game_over'){
+            if (x>=600 && x<=950 && y>=515 && y<=620){
+                restart();
+            }
         }
-        return ongoing_rst;
     }
+
+    /*
     
+    UPDATE SCORES
+    
+    */
     function update_score()
     {
         //get capital, capital max /min
@@ -554,7 +611,7 @@ window.onload = function()
         }
         
         //calculate level
-        level = Math.floor(((capital_max - initial_capital) / 50),0)+1;
+        level = Math.min(Math.floor(((capital_max) / 500)+1,0),5);
         
         //define score font size and color
         context.font = "83px Economica";
@@ -583,5 +640,4 @@ window.onload = function()
         }
     }
     
-
 }
