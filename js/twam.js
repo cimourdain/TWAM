@@ -64,7 +64,7 @@ window.onload = function()
 
 
     //display score labels
-    context.font = "85px Economica";
+    /*context.font = "85px Economica";
     context.fillStyle = "#D54F58"
     context.fillText("Level", 25, 820);
     context.fillText(level, 200, 820);
@@ -75,6 +75,7 @@ window.onload = function()
     context.fillText("Closed Positions: ", 680, 770);
     context.fillText("Capital min/max: ", 680, 800)
     context.fillText("Profit Factor: ", 680, 830);
+	*/
     //context.fillText("0 ", 860, 770);
     //context.fillText(capital_min+"/"+capital_max, 860, 800)
     //context.fillText(profit_factor, 860, 830);  
@@ -613,12 +614,29 @@ window.onload = function()
         //calculate level
         level = Math.min(Math.floor(((capital_max) / 500)+1,0),5);
         
+		context.clearRect(25, 740, 1000, 100);
+		context.font = "85px Economica";
+		context.fillStyle = "#D54F58"
+		context.fillText("Level", 25, 820);
+		context.fillText(level, 200, 820);
+		context.fillText("-", 300, 820);
+		context.fillText(capital, 370, 820);
+		context.fillText("EUR", 520, 820);
+		context.font = "30px Economica";
+		context.fillText("Closed Positions: ", 680, 770);
+		context.fillText(ClosedPositions.length, 860, 770);
+		context.fillText("Capital min/max: ", 680, 800);
+		context.fillText(capital_min+"/"+capital_max, 860, 800)
+		context.fillText("Profit Factor: ", 680, 830);
+		context.fillText(profit_factor, 860, 830); 
+		/*
         //define score font size and color
         context.font = "83px Economica";
         context.fillStyle = "#D54F58"
         
         //clear & update level value
         context.clearRect(200, 740, 70, 100);
+		context.fillText("Level", 25, 820);
         context.fillText(level, 200, 820);
         
         //clear & update capital value
@@ -629,7 +647,8 @@ window.onload = function()
         context.clearRect(850, 740, 300, 300);
         context.fillText(ClosedPositions.length, 860, 770);
         context.fillText(capital_min+"/"+capital_max, 860, 800)
-        context.fillText(profit_factor, 860, 830);  
+        context.fillText(profit_factor, 860, 830); 
+		*/
 
         if  (OpenPositions.length > 0){
             var ongoing_score = getAllResult(); 
